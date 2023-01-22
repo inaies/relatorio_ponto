@@ -11,37 +11,25 @@ int calcula_secs_totais(horario_t tempo)
     return (tempo.hor * 3600 + tempo.min * 60 + tempo.sec);
 }
 
-void calcula_horas(registro_t *reg)
+horario_t calcula_horas(horario_t inicio, horario_t final, int soma_diff)
 {
-    int total_inicial, total_final, diff;
-
-    total_inicial = calcula_secs_totais(reg->inicio);
-    total_final = calcula_secs_totais(reg->final);
-
-    diff = total_final - total_inicial;
-    
-    reg->total.hor = floor(diff/3600);
-    diff = diff % 3600;
-    reg->total.min = floor(diff/60);
-    diff = diff % 60;
-    reg->total.sec = diff;
-}
-
-horario_t soma_tempo(horario_t atual, horario_t soma)
-{
-    int atual_total, soma_total, aux;
+    int total_inicial, total_final, tempo_total;
     horario_t resul;
-    atual_total = calcula_secs_totais(atual);
-    soma_total = calcula_secs_totais(soma);
 
-    aux = atual_total + soma_total;
+    total_inicial = calcula_secs_totais(inicio);
+    total_final = calcula_secs_totais(final);
 
-    resul.hor = floor(aux/3600);
-    aux = aux % 3600;
-    resul.min = floor(aux/60);
-    aux = aux % 60;
-    resul.sec = aux;
-    return resul;
+    if(soma_diff)
+        tempo_total = total_inicial + total_final;
+    else
+        tempo_total = total_final - total_inicial;
+    
+    resul.hor = floor(tempo_total/3600);
+    tempo_total = tempo_total % 3600;
+    resul.min = floor(tempo_total/60);
+    tempo_total = tempo_total % 60;
+    resul.sec = tempo_total;
+    return (resul);
 }
 
 horario_t calcula_totais(FILE *registro)
@@ -93,7 +81,7 @@ horario_t calcula_totais(FILE *registro)
             atual.min = atoi(pt);
             pt = strtok(NULL, ":");
             atual.sec = atoi(pt);
-            mensal = soma_tempo(atual, mensal);
+            mensal = calcula_horas(atual, mensal, 1);
         }
         // printf("%02d:%02d:%02d", mensal.hor, mensal.min, mensal.sec);
     }
@@ -112,10 +100,6 @@ int main()
     FILE *registro;
     int primeiro_reg = 1;
 
-    //ler somas diarias pelo txt usando strtok
-    //ler total diaria usando strstr (buscando pela palavra "total")
-
-    printf("%02d:%02d:%02d \n", tm.tm_hour, tm.tm_min, tm.tm_sec);
     printf("e -> entrada \n s -> saida \n x -> termina programa \n");
 
     entrada = 'e';
@@ -160,10 +144,10 @@ int main()
             reg.final.min = tm.tm_min;
             reg.final.sec = tm.tm_sec;
             fprintf(registro, "     saida: %02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
-            calcula_horas(&reg);
+            reg.total = calcula_horas(reg.inicio, reg.final, 0);
             fprintf(registro, "     tempo: %02d:%02d:%02d\n", reg.total.hor, reg.total.min, reg.total.sec);
 
-            reg.diario = soma_tempo(reg.diario, reg.total);
+            reg.diario = calcula_horas(reg.diario, reg.total, 1);
         }
 
         if(input == encerra)
