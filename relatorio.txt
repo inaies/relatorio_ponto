@@ -1,0 +1,23 @@
+
+Data: 22/01/2023 
+     entrada: 02:34:27     saida: 02:34:33     tempo: 00:00:06
+     entrada: 02:34:34     saida: 02:35:01     tempo: 00:00:27
+total: 00:00:33
+Total mensal: 00:00:33
+
+Data: 22/01/2023 
+     entrada: 02:35:04     saida: 02:35:12     tempo: 00:00:08
+total: 00:00:08
+        Total mensal: 00:00:33
+
+Data: 22/01/2023 
+     entrada: 02:36:17     saida: 02:36:19     tempo: 00:00:02
+     entrada: 02:36:20     saida: 02:36:22     tempo: 00:00:02
+total: 00:00:04
+Total mensal: 00:00:45
+
+Data: 22/01/2023 
+     entrada: 02:36:25     saida: 02:36:30     tempo: 00:00:05
+     entrada: 02:36:31     saida: 02:36:36     tempo: 00:00:05
+total: 00:00:10
+Total mensal: 00:00:55

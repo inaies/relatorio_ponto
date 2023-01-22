@@ -16,7 +16,7 @@ typedef struct horario horario_t;
 struct registro
 {
     horario_t inicio, final, total;
-    int res_diario;
+    horario_t diario, mensal;
 };
 typedef struct registro registro_t;
 
