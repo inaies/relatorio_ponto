@@ -32,15 +32,14 @@ horario_t calcula_horas(horario_t inicio, horario_t final, int soma_diff)
     return (resul);
 }
 
-horario_t calcula_totais(FILE *registro)
+void calcula_totais(FILE *registro, horario_t *total_mensal)
 {
-    horario_t atual, mensal, anterior;
+    horario_t mensal, atual, anterior;
     char *linha;
     int aux;
     char *pt;
     int mes_atual, mes;
     long int size;
-    char *limpa = "                      ";
 
     rewind(registro);
 
@@ -65,14 +64,7 @@ horario_t calcula_totais(FILE *registro)
                 mes = mes_atual;
             }
         }
-        // size = ftell(registro);
-        // if (strstr(linha, "Total mensal: "))
-        // {
-        //     fseek(registro, size, SEEK_SET);
-        //     fwrite(limpa, sizeof(limpa), 1, registro);
-        //     // mensal = soma_tempo(mensal, anterior);
-        //     // printf("%02d:%02d:%02d", mensal.hor, mensal.min, mensal.sec);
-        // }
+
         if (strstr(linha, "total: "))
         {
             pt = strtok(linha, "total: ");
@@ -81,22 +73,22 @@ horario_t calcula_totais(FILE *registro)
             atual.min = atoi(pt);
             pt = strtok(NULL, ":");
             atual.sec = atoi(pt);
-            mensal = calcula_horas(atual, mensal, 1);
+            total_mensal[mes_atual] = calcula_horas(atual, mensal, 1);
         }
-        // printf("%02d:%02d:%02d", mensal.hor, mensal.min, mensal.sec);
     }
 
     free(linha);
-    return(mensal);
 }
 
 int main()
 {
-    char entrada, saida, encerra;
+    char entrada, saida, encerra, resumo;
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char input;
     registro_t reg;
+    horario_t *total_mensal;
+    enum meses mes;
     FILE *registro;
     int primeiro_reg = 1;
 
@@ -104,6 +96,7 @@ int main()
 
     entrada = 'e';
     saida = 's';
+    resumo = 'r';
     encerra = 'x';
 
     // colocar numa funcao ? 
@@ -111,6 +104,14 @@ int main()
     if(registro == NULL)
     {
         perror("Erro ao abrir arquivo de relatorio");
+        exit(1);
+    }
+
+    //aloca vetor de struct horario_t para resumo de cada mes
+    total_mensal = malloc(sizeof(horario_t)*12);
+    if(total_mensal == NULL)
+    {
+        perror("erro ao alocar vetor de struct");
         exit(1);
     }
 
@@ -150,16 +151,25 @@ int main()
             reg.diario = calcula_horas(reg.diario, reg.total, 1);
         }
 
+        if(input == resumo)
+            break;
+
         if(input == encerra)
             break;
     }
 
-    fprintf(registro, "total: %02d:%02d:%02d\n", reg.diario.hor, reg.diario.min, reg.diario.sec);
+    if(input != resumo)
+        fprintf(registro, "total: %02d:%02d:%02d\n", reg.diario.hor, reg.diario.min, reg.diario.sec);
 
-    reg.mensal = calcula_totais(registro);
-    rewind(registro);
-    fprintf(registro, "Total mensal: %02d:%02d:%02d\n", reg.mensal.hor, reg.mensal.min, reg.mensal.sec);
+    calcula_totais(registro, total_mensal);
+    for(int i = 0; i < 12; i++)
+    {
+        mes = i;
+        if(verifica_horas(total_mensal[i]))
+            fprintf(registro, "Total mensal de %s: %02d:%02d:%02d\n", mes, total_mensal[i].hor, total_mensal[i].min, total_mensal[i].sec);
+    }
 
+    free(total_mensal);
     fclose(registro);
 
 }

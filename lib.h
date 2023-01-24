@@ -20,4 +20,20 @@ struct registro
 };
 typedef struct registro registro_t;
 
+
+enum meses{
+    janeiro,
+    fevereiro,
+    marco,
+    abril,
+    maio,
+    junho,
+    julho,
+    agosto, 
+    setembro,
+    outubro,
+    novembro,
+    dezembro
+};
+
 #endif
