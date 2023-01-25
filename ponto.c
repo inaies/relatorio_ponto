@@ -16,30 +16,32 @@ horario_t calcula_horas(horario_t inicio, horario_t final, int soma_diff)
     int total_inicial, total_final, tempo_total;
     horario_t resul;
 
+    //converte os tempos iniciais e finais em segundos 
     total_inicial = calcula_secs_totais(inicio);
     total_final = calcula_secs_totais(final);
 
+    //caso a funcao seja usada para calcular a diferenca ou a soma entre dois tempos
     if(soma_diff)
         tempo_total = total_inicial + total_final;
     else
         tempo_total = total_final - total_inicial;
     
+
+    //converte novamente os segundos totais no formato hh:mm:ss
     resul.hor = floor(tempo_total/3600);
     tempo_total = tempo_total % 3600;
     resul.min = floor(tempo_total/60);
     tempo_total = tempo_total % 60;
     resul.sec = tempo_total;
+
     return (resul);
 }
 
 void calcula_totais(FILE *registro, horario_t *total_mensal)
 {
-    horario_t mensal, atual, anterior;
-    char *linha;
-    int aux;
-    char *pt;
-    int mes_atual, mes;
-    long int size;
+    horario_t mensal, atual;
+    char *linha, *pt;
+    int mes_atual;
 
     rewind(registro);
 
@@ -49,6 +51,7 @@ void calcula_totais(FILE *registro, horario_t *total_mensal)
 
     linha = malloc(sizeof(char) * linesize);
 
+    //le todo o arquivo de registro de horas para somar as horas de cada mes
     while(fgets(linha, linesize, registro) != NULL)
     {
         if(strstr(linha, "Data: "))
@@ -56,16 +59,10 @@ void calcula_totais(FILE *registro, horario_t *total_mensal)
             pt = strtok(linha, "/");
             pt = strtok(NULL, "/");
             mes_atual = atoi(pt);
-            if(mes_atual != mes)
-            {
-                mensal.hor = 0;
-                mensal.min = 0;
-                mensal.sec = 0;
-                mes = mes_atual;
-            }
         }
 
-        if (strstr(linha, "total: "))
+        //busca todos os totais diarios de cada mes para soma-los no vetor 
+        if(strstr(linha, "total: "))
         {
             pt = strtok(linha, "total: ");
             atual.hor = atoi(pt);
@@ -73,7 +70,7 @@ void calcula_totais(FILE *registro, horario_t *total_mensal)
             atual.min = atoi(pt);
             pt = strtok(NULL, ":");
             atual.sec = atoi(pt);
-            total_mensal[mes_atual] = calcula_horas(atual, mensal, 1);
+            total_mensal[mes_atual] = calcula_horas(atual, total_mensal[mes_atual], 1);
         }
     }
 
@@ -82,24 +79,24 @@ void calcula_totais(FILE *registro, horario_t *total_mensal)
 
 int main()
 {
-    char entrada, saida, encerra, resumo;
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    char input;
+    FILE *registro;
     registro_t reg;
     horario_t *total_mensal;
-    enum meses mes;
-    FILE *registro;
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    char entrada, saida, encerra, input;
     int primeiro_reg = 1;
+    int entrada_registrada = 0;
+    int dia = tm.tm_mday;
 
     printf("e -> entrada \n s -> saida \n x -> termina programa \n");
 
     entrada = 'e';
     saida = 's';
-    resumo = 'r';
     encerra = 'x';
 
-    // colocar numa funcao ? 
+    // abre, ou cria, caso nao exista, o arquivo .txt de relatorio
     registro = fopen("relatorio.txt", "a+");
     if(registro == NULL)
     {
@@ -115,9 +112,8 @@ int main()
         exit(1);
     }
 
-    reg.diario.hor = 0;
-    reg.diario.min = 0;
-    reg.diario.sec = 0;
+    //inicializa valores 
+    zera_valores(total_mensal, &reg);
 
     for(;;)
     {
@@ -127,12 +123,24 @@ int main()
 
         if(input == entrada)
         {
-            if((primeiro_reg == 1))
+            entrada_registrada = 1;
+            //verifica mudanca de dia
+            if(tm.tm_mday != dia)
             {
-                fprintf(registro, "\n");
-                fprintf(registro, "Data: %02d/%02d/%d \n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
-                primeiro_reg = 0;
+                fprintf(registro, "total: %02d:%02d:%02d\n", reg.diario.hor, reg.diario.min, reg.diario.sec);
+                fprintf(registro, "\nData: %02d/%02d/%d \n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+                reg.diario.hor = 0;
+                reg.diario.min = 0;
+                reg.diario.sec = 0;
             }
+            if(primeiro_reg == 1)
+            {
+                fprintf(registro, "\nData: %02d/%02d/%d \n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+                primeiro_reg = 0;
+                dia = tm.tm_mday;
+            }
+
+            //guarda no vetor as horas do sistema 
             reg.inicio.hor = tm.tm_hour;
             reg.inicio.min = tm.tm_min;
             reg.inicio.sec = tm.tm_sec;
@@ -141,35 +149,49 @@ int main()
 
         if(input == saida)
         {
-            reg.final.hor = tm.tm_hour;
-            reg.final.min = tm.tm_min;
-            reg.final.sec = tm.tm_sec;
-            fprintf(registro, "     saida: %02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
-            reg.total = calcula_horas(reg.inicio, reg.final, 0);
-            fprintf(registro, "     tempo: %02d:%02d:%02d\n", reg.total.hor, reg.total.min, reg.total.sec);
+            //verifica se houve uma entrada antes da saida
+            if(entrada_registrada == 0)
+                printf("saida registrada sem entrada previa, digite uma entrada primeiro \n");
+            else
+            {
+                reg.final.hor = tm.tm_hour;
+                reg.final.min = tm.tm_min;
+                reg.final.sec = tm.tm_sec;
+                dia = tm.tm_mday;
 
-            reg.diario = calcula_horas(reg.diario, reg.total, 1);
+                fprintf(registro, "     saida: %02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+                //caso a saida seja registrada no dia seguinte, eh considerado como saida 23:59:59
+                if(reg.final.hor < reg.inicio.hor)
+                {
+                    reg.final.hor = 23;
+                    reg.final.min = 59;
+                    reg.final.sec = 59;
+                }
+
+                //calcula diferenca de tempo entre entrada e saida
+                reg.total = calcula_horas(reg.inicio, reg.final, 0);
+                fprintf(registro, "     tempo: %02d:%02d:%02d\n", reg.total.hor, reg.total.min, reg.total.sec);
+
+                //calcula soma de tempo trabalhada no dia
+                reg.diario = calcula_horas(reg.diario, reg.total, 1);
+                entrada_registrada = 0;
+            }
         }
-
-        if(input == resumo)
-            break;
 
         if(input == encerra)
             break;
     }
 
-    if(input != resumo)
-        fprintf(registro, "total: %02d:%02d:%02d\n", reg.diario.hor, reg.diario.min, reg.diario.sec);
+    fprintf(registro, "total: %02d:%02d:%02d\n", reg.diario.hor, reg.diario.min, reg.diario.sec);
 
     calcula_totais(registro, total_mensal);
+
+    //imprime total de horas de cada mes caso valor nao esteja zerado
     for(int i = 0; i < 12; i++)
-    {
-        mes = i;
         if(verifica_horas(total_mensal[i]))
-            fprintf(registro, "Total mensal de %s: %02d:%02d:%02d\n", mes, total_mensal[i].hor, total_mensal[i].min, total_mensal[i].sec);
-    }
+            fprintf(registro, "\nTotal mensal de %s: %02d:%02d:%02d\n", converte_mes(i), total_mensal[i].hor, total_mensal[i].min, total_mensal[i].sec);
 
     free(total_mensal);
     fclose(registro);
-
 }

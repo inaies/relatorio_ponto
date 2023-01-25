@@ -8,3 +8,9 @@ ponto.o: ponto.c
 
 lib.o: lib.c
 	gcc -c lib.c 
+
+clean: 
+	rm -f *~
+
+purge: clean
+	rm -f *.o *.gch ponto

@@ -20,20 +20,10 @@ struct registro
 };
 typedef struct registro registro_t;
 
+int verifica_horas(horario_t total);
 
-enum meses{
-    janeiro,
-    fevereiro,
-    marco,
-    abril,
-    maio,
-    junho,
-    julho,
-    agosto, 
-    setembro,
-    outubro,
-    novembro,
-    dezembro
-};
+char *converte_mes(int num);
+
+void zera_valores(horario_t *total_mensal, registro_t *reg);
 
 #endif
